@@ -104,7 +104,14 @@ impl Stream {
         };
 
         let thread =
-            thread::spawn(move || run_inner(run_context, &mut data_callback, &mut error_callback));
+            thread::spawn(move || {
+                use super::check_result;
+                use super::winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
+                use super::winapi::um::objbase::COINIT_MULTITHREADED;
+                unsafe { check_result(CoInitializeEx(ptr::null_mut(), COINIT_MULTITHREADED)).unwrap(); }
+                run_inner(run_context, &mut data_callback, &mut error_callback);
+                unsafe { CoUninitialize(); }
+            });
 
         Stream {
             thread: Some(thread),
